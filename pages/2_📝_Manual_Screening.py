@@ -16,21 +16,28 @@ if not refs:
 if "decisions" not in st.session_state:
     st.session_state["decisions"] = {}
 
+# Display screening interface
 for i, ref in enumerate(refs):
     key = f"ref_{i}"
     title = ref.get("title") or ref.get("TI") or "No Title"
-    with st.expander(f"{i+1}. {title}"):
-        st.write(ref)
-        current_decision = st.session_state["decisions"].get(key, "Unscreened")
-        new_decision = st.radio(
-            "Screening Decision",
+    abstract = ref.get("abstract") or ref.get("AB") or "No Abstract"
+    authors = ref.get("authors") or ref.get("AU") or ""
+    
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        st.markdown(f"**{i+1}. {title}**")
+        st.markdown(f"*{authors}*")
+        st.markdown(f"`Abstract:` {abstract}")
+    with col2:
+        selected = st.radio(
+            "Decision",
             ["Unscreened", "Include", "Exclude"],
-            index=["Unscreened", "Include", "Exclude"].index(current_decision),
+            index=["Unscreened", "Include", "Exclude"].index(decisions.get(key, "Unscreened")),
             key=key,
         )
-        st.session_state["decisions"][key] = new_decision
+        st.session_state["decisions"][key] = selected
 
-if st.button("💾 Save Manual Decisions"):
-    st.session_state["decisions"] = dict(st.session_state["decisions"])  # sync session
+# Save button
+if st.button("💾 Save Screening Decisions"):
     save_project_data(project_name, refs, st.session_state["decisions"])
-    st.success("✅ Manual decisions saved.")
+    st.success("✅ Screening decisions saved.")
