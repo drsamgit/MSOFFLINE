@@ -1,4 +1,3 @@
-
 import streamlit as st
 from utils.file_utils import save_project_data
 
@@ -10,18 +9,28 @@ decisions = st.session_state.get("decisions", {})
 project_name = st.session_state.get("project_name", "default_project")
 
 if not refs:
-    st.warning("No references loaded.")
+    st.warning("⚠️ No references loaded. Please import first.")
     st.stop()
+
+# Initialize decisions if not already
+if "decisions" not in st.session_state:
+    st.session_state["decisions"] = {}
 
 for i, ref in enumerate(refs):
     key = f"ref_{i}"
-    with st.expander(f"{i+1}. {ref.get('title', ref.get('TI', 'No Title'))}"):
+    title = ref.get("title") or ref.get("TI") or "No Title"
+    with st.expander(f"{i+1}. {title}"):
         st.write(ref)
-        decision = st.radio("Decision", ["Unscreened", "Include", "Exclude"], index=["Unscreened", "Include", "Exclude"].index(decisions.get(key, "Unscreened")), key=key)
-        decisions[key] = decision
+        current_decision = st.session_state["decisions"].get(key, "Unscreened")
+        new_decision = st.radio(
+            "Screening Decision",
+            ["Unscreened", "Include", "Exclude"],
+            index=["Unscreened", "Include", "Exclude"].index(current_decision),
+            key=key,
+        )
+        st.session_state["decisions"][key] = new_decision
 
-st.session_state["decisions"] = decisions
-
-if st.button("💾 Save Progress"):
-    save_project_data(project_name, refs, decisions)
-    st.success("Progress saved.")
+if st.button("💾 Save Manual Decisions"):
+    st.session_state["decisions"] = dict(st.session_state["decisions"])  # sync session
+    save_project_data(project_name, refs, st.session_state["decisions"])
+    st.success("✅ Manual decisions saved.")
